@@ -31,11 +31,18 @@
       align-items: center;
       justify-content: center;
       padding: 2.5rem 2rem;
-      overflow: hidden;
-      cursor: none;
+      /* NO overflow:hidden — allows mobile scroll */
     }
 
-    /* ── Custom cursor ── */
+    /* ── Custom cursor (desktop only) ── */
+    @media (pointer: fine) {
+      body { cursor: none; }
+      #cursor, #cursor-ring { display: block; }
+    }
+    @media (pointer: coarse) {
+      #cursor, #cursor-ring { display: none; }
+    }
+
     #cursor {
       position: fixed;
       width: 8px; height: 8px;
@@ -292,7 +299,6 @@
     .card:nth-child(3) { animation-delay: 0.75s; }
     .card:nth-child(4) { animation-delay: 0.85s; }
 
-    /* Radial glow tracks mouse */
     .card::before {
       content: '';
       position: absolute; inset: 0;
@@ -303,7 +309,6 @@
     }
     .card:hover::before { opacity: 1; }
 
-    /* Top line sweep */
     .card::after {
       content: '';
       position: absolute;
@@ -322,7 +327,6 @@
       box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(201,168,76,0.07);
     }
 
-    /* Folded corner */
     .fold {
       position: absolute;
       top: 0; right: 0;
@@ -392,7 +396,6 @@
     }
     #clock { color: var(--accent); font-variant-numeric: tabular-nums; }
 
-    /* ── Base animations ── */
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-14px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -402,7 +405,6 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Typed cursor */
     #typed::after {
       content: '|';
       color: var(--accent);
@@ -422,14 +424,12 @@
   <div id="grid-bg"></div>
   <div id="grain"></div>
 
-  <!-- Loader -->
   <div id="loader">
     <span class="loader-label">Initializing</span>
     <div class="loader-bar-track"><div class="loader-bar-fill" id="bar"></div></div>
     <span class="loader-pct" id="pct">0%</span>
   </div>
 
-  <!-- Content -->
   <div class="wrapper" id="main">
     <header>
       <div class="top-bar">
@@ -456,7 +456,7 @@
     </div>
 
     <nav class="grid" aria-label="Units">
-      <a href="unit-3/index.html" class="card">
+      <a href="unit-3.html" class="card">
         <div class="fold"></div>
         <div>
           <p class="card-idx">// UNIT — 03</p>
@@ -467,7 +467,7 @@
           <span class="card-icon">↗</span>
         </div>
       </a>
-      <a href="unit-4/index.html" class="card">
+      <a href="unit-4.html" class="card">
         <div class="fold"></div>
         <div>
           <p class="card-idx">// UNIT — 04</p>
@@ -478,7 +478,7 @@
           <span class="card-icon">↗</span>
         </div>
       </a>
-      <a href="unit-5/index.html" class="card">
+      <a href="unit-5.html" class="card">
         <div class="fold"></div>
         <div>
           <p class="card-idx">// UNIT — 05</p>
@@ -489,7 +489,7 @@
           <span class="card-icon">↗</span>
         </div>
       </a>
-      <a href="unit-6/index.html" class="card">
+      <a href="unit-6.html" class="card">
         <div class="fold"></div>
         <div>
           <p class="card-idx">// UNIT — 06</p>
@@ -509,7 +509,7 @@
   </div>
 
   <script>
-    /* ── Custom cursor ── */
+    /* ── Cursor (desktop only) ── */
     const cursor = document.getElementById('cursor');
     const ring   = document.getElementById('cursor-ring');
     const spot   = document.getElementById('spotlight');
@@ -530,7 +530,7 @@
       requestAnimationFrame(animRing);
     })();
 
-    /* ── Card glow follows mouse ── */
+    /* ── Card glow ── */
     document.querySelectorAll('.card').forEach(card => {
       card.addEventListener('mousemove', e => {
         const r = card.getBoundingClientRect();
