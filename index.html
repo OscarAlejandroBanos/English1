@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English 1</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #080810;
+      --surface: #0e0e1a;
+      --accent:  #c9a84c;
+      --accent2: #5b8dee;
+      --green:   #52e89a;
+      --text:    #ddd8cc;
+      --muted:   #42405a;
+      --border:  #1a1a2e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 2rem;
+      overflow: hidden;
+      cursor: none;
+    }
+
+    /* ── Custom cursor ── */
+    #cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: screen;
+      transition: width 0.2s, height 0.2s;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(201,168,76,0.45);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width 0.25s, height 0.25s, border-color 0.25s;
+    }
+    body:has(a:hover) #cursor      { width: 14px; height: 14px; }
+    body:has(a:hover) #cursor-ring { width: 54px; height: 54px; border-color: var(--accent); }
+
+    /* ── Spotlight ── */
+    #spotlight {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+      background: radial-gradient(600px circle at var(--mx,50%) var(--my,50%),
+        rgba(201,168,76,0.045) 0%, transparent 70%);
+    }
+
+    /* ── Grid ── */
+    #grid-bg {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    /* ── Grain ── */
+    #grain {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0; opacity: 0.3;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ── Loader ── */
+    #loader {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.1rem;
+      transition: opacity 0.7s ease, visibility 0.7s ease;
+    }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+
+    .loader-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .loader-bar-track {
+      width: 180px; height: 1px;
+      background: var(--border);
+      position: relative; overflow: hidden;
+    }
+    .loader-bar-fill {
+      position: absolute;
+      top: 0; left: 0; height: 100%;
+      background: var(--accent);
+      width: 0%;
+    }
+    .loader-pct {
+      font-size: 0.6rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+    }
+
+    /* ── Wrapper ── */
+    .wrapper {
+      position: relative; z-index: 1;
+      max-width: 740px; width: 100%;
+      opacity: 0;
+      transition: opacity 0.9s ease;
+    }
+    .wrapper.visible { opacity: 1; }
+
+    /* ── Top bar ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.2rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      animation: fadeDown 0.6s ease 0.05s both;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 0.8rem; }
+
+    .badge {
+      padding: 0.18rem 0.5rem;
+      border: 1px solid var(--border);
+      font-size: 0.56rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+    }
+
+    #status {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--green);
+      font-size: 0.6rem;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-dot 2.2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; box-shadow: 0 0 7px var(--green); }
+      50%      { opacity:0.35; box-shadow: 0 0 2px var(--green); }
+    }
+
+    /* ── Title ── */
+    .title-block {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      animation: fadeDown 0.6s ease 0.2s both;
+    }
+    .title-block::after {
+      content: '';
+      position: absolute;
+      left: 0; top: -5%;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+    }
+    .title-block:hover::after {
+      animation: scanline 0.55s ease forwards;
+      opacity: 1;
+    }
+    @keyframes scanline {
+      from { top: -5%; }
+      to   { top: 108%; }
+    }
+
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.2rem, 9vw, 6rem);
+      font-weight: 300;
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      cursor: default;
+      user-select: none;
+    }
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .title-secondary {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.2rem, 9vw, 6rem);
+      font-weight: 700;
+      line-height: 0.92;
+      letter-spacing: -0.02em;
+      background: linear-gradient(100deg, var(--text) 10%, rgba(221,216,204,0.25) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h1.glitch { animation: glitch 0.38s steps(2) both; }
+    @keyframes glitch {
+      0%   { text-shadow:  3px 0 var(--accent2), -3px 0 var(--accent); filter: brightness(1.4); }
+      30%  { text-shadow: -4px 0 var(--accent),   4px 0 var(--accent2); }
+      70%  { text-shadow:  4px 0 var(--accent2), -4px 0 var(--accent); }
+      100% { text-shadow: none; filter: brightness(1); }
+    }
+
+    .subtitle {
+      margin-top: 1.1rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      animation: fadeDown 0.6s ease 0.35s both;
+      min-height: 1.1em;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      margin: 2rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      animation: fadeDown 0.6s ease 0.45s both;
+    }
+    .divider-line {
+      height: 1px; flex: 1;
+      background: linear-gradient(to right, var(--accent), transparent);
+      max-width: 180px;
+    }
+    .divider-label {
+      font-size: 0.56rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .dots { display: flex; gap: 4px; }
+    .dots span { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
+
+    /* ── Cards ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.7rem 1.5rem 1.3rem;
+      text-decoration: none;
+      color: var(--text);
+      overflow: hidden;
+      min-height: 155px;
+      transition: border-color 0.35s, transform 0.35s, box-shadow 0.35s;
+      animation: fadeUp 0.55s ease both;
+    }
+    .card:nth-child(1) { animation-delay: 0.55s; }
+    .card:nth-child(2) { animation-delay: 0.65s; }
+    .card:nth-child(3) { animation-delay: 0.75s; }
+    .card:nth-child(4) { animation-delay: 0.85s; }
+
+    /* Radial glow tracks mouse */
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at var(--cx,50%) var(--cy,50%),
+        rgba(201,168,76,0.09) 0%, transparent 65%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover::before { opacity: 1; }
+
+    /* Top line sweep */
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.45s ease;
+    }
+    .card:hover::after { transform: scaleX(1); }
+
+    .card:hover {
+      border-color: rgba(201,168,76,0.35);
+      transform: translateY(-5px);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(201,168,76,0.07);
+    }
+
+    /* Folded corner */
+    .fold {
+      position: absolute;
+      top: 0; right: 0;
+      width: 0; height: 0;
+      border-style: solid;
+      border-width: 0 26px 26px 0;
+      border-color: transparent var(--bg) transparent transparent;
+      transition: border-width 0.3s;
+    }
+    .card:hover .fold { border-width: 0 34px 34px 0; }
+
+    .card-idx {
+      font-size: 0.56rem;
+      letter-spacing: 0.26em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+    .card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.1rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--text);
+      transition: color 0.3s;
+    }
+    .card:hover .card-title { color: var(--accent); }
+
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.3rem;
+    }
+    .card-cta {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color 0.3s, letter-spacing 0.3s;
+    }
+    .card:hover .card-cta { color: var(--accent); letter-spacing: 0.28em; }
+
+    .card-icon {
+      width: 26px; height: 26px;
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      transition: border-color 0.3s, color 0.3s, transform 0.3s;
+    }
+    .card:hover .card-icon {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: rotate(-45deg);
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 2.2rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.56rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      animation: fadeUp 0.55s ease 0.95s both;
+    }
+    #clock { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    /* ── Base animations ── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typed cursor */
+    #typed::after {
+      content: '|';
+      color: var(--accent);
+      animation: cur 0.65s step-start infinite;
+    }
+    @keyframes cur {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+  <div id="spotlight"></div>
+  <div id="grid-bg"></div>
+  <div id="grain"></div>
+
+  <!-- Loader -->
+  <div id="loader">
+    <span class="loader-label">Initializing</span>
+    <div class="loader-bar-track"><div class="loader-bar-fill" id="bar"></div></div>
+    <span class="loader-pct" id="pct">0%</span>
+  </div>
+
+  <!-- Content -->
+  <div class="wrapper" id="main">
+    <header>
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <span class="badge">GH-PAGES</span>
+          <span>v1.0</span>
+        </div>
+        <div id="status"><span class="dot"></span>ONLINE</div>
+      </div>
+
+      <div class="title-block" id="title-block">
+        <h1 id="h1-el">English <em><span id="typed"></span></em></h1>
+        <span class="title-secondary">Notes</span>
+      </div>
+
+      <p class="subtitle" id="sub">&nbsp;</p>
+    </header>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="divider-label">Select a unit</span>
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <nav class="grid" aria-label="Units">
+      <a href="unit-3/index.html" class="card">
+        <div class="fold"></div>
+        <div>
+          <p class="card-idx">// UNIT — 03</p>
+          <p class="card-title">Unit 3</p>
+        </div>
+        <div class="card-bottom">
+          <span class="card-cta">Open</span>
+          <span class="card-icon">↗</span>
+        </div>
+      </a>
+      <a href="unit-4/index.html" class="card">
+        <div class="fold"></div>
+        <div>
+          <p class="card-idx">// UNIT — 04</p>
+          <p class="card-title">Unit 4</p>
+        </div>
+        <div class="card-bottom">
+          <span class="card-cta">Open</span>
+          <span class="card-icon">↗</span>
+        </div>
+      </a>
+      <a href="unit-5/index.html" class="card">
+        <div class="fold"></div>
+        <div>
+          <p class="card-idx">// UNIT — 05</p>
+          <p class="card-title">Unit 5</p>
+        </div>
+        <div class="card-bottom">
+          <span class="card-cta">Open</span>
+          <span class="card-icon">↗</span>
+        </div>
+      </a>
+      <a href="unit-6/index.html" class="card">
+        <div class="fold"></div>
+        <div>
+          <p class="card-idx">// UNIT — 06</p>
+          <p class="card-title">Unit 6</p>
+        </div>
+        <div class="card-bottom">
+          <span class="card-cta">Open</span>
+          <span class="card-icon">↗</span>
+        </div>
+      </a>
+    </nav>
+
+    <footer>
+      <span>GitHub Pages</span>
+      <span id="clock"></span>
+    </footer>
+  </div>
+
+  <script>
+    /* ── Custom cursor ── */
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursor-ring');
+    const spot   = document.getElementById('spotlight');
+    let mx = innerWidth/2, my = innerHeight/2, rx = mx, ry = my;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top  = my + 'px';
+      spot.style.setProperty('--mx', mx + 'px');
+      spot.style.setProperty('--my', my + 'px');
+    });
+    (function animRing() {
+      rx += (mx - rx) * 0.13;
+      ry += (my - ry) * 0.13;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      requestAnimationFrame(animRing);
+    })();
+
+    /* ── Card glow follows mouse ── */
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--cx', ((e.clientX - r.left) / r.width  * 100) + '%');
+        card.style.setProperty('--cy', ((e.clientY - r.top)  / r.height * 100) + '%');
+      });
+    });
+
+    /* ── Loader ── */
+    const bar    = document.getElementById('bar');
+    const pct    = document.getElementById('pct');
+    const loader = document.getElementById('loader');
+    const main   = document.getElementById('main');
+    let prog = 0;
+
+    const iv = setInterval(() => {
+      prog = Math.min(prog + Math.random() * (prog < 65 ? 9 : 3.5), 100);
+      bar.style.width = prog + '%';
+      pct.textContent = Math.floor(prog) + '%';
+      if (prog >= 100) {
+        clearInterval(iv);
+        setTimeout(() => {
+          loader.classList.add('hidden');
+          main.classList.add('visible');
+          startTyping();
+        }, 280);
+      }
+    }, 55);
+
+    /* ── Scramble & type ── */
+    function startTyping() {
+      const target  = document.getElementById('typed');
+      const sub     = document.getElementById('sub');
+      const digits  = '0123456789';
+      const subText = 'Selecciona una unidad para comenzar';
+      let step = 0;
+
+      function scramble() {
+        if (step < 8) {
+          target.textContent = digits[Math.floor(Math.random() * digits.length)];
+          step++;
+          setTimeout(scramble, 72);
+        } else {
+          target.textContent = '1';
+          let i = 0;
+          sub.textContent = '';
+          const si = setInterval(() => {
+            sub.textContent += subText[i++];
+            if (i >= subText.length) clearInterval(si);
+          }, 27);
+        }
+      }
+      setTimeout(scramble, 350);
+    }
+
+    /* ── Glitch on click ── */
+    const h1el = document.getElementById('h1-el');
+    h1el.addEventListener('click', () => {
+      h1el.classList.remove('glitch');
+      void h1el.offsetWidth;
+      h1el.classList.add('glitch');
+    });
+
+    /* ── Live clock ── */
+    const clockEl = document.getElementById('clock');
+    const tick = () => clockEl.textContent = new Date().toLocaleTimeString('es-ES',{hour12:false});
+    tick(); setInterval(tick, 1000);
+  </script>
+</body>
+</html>
